@@ -308,11 +308,21 @@ int main(int argc, char **argv) {
 	memcpy(challenge_new, tmp, len < MAX2FLEN ? len : MAX2FLEN);
 
 	/* do challenge/response and encode to hex */
-	if (yk_challenge_response(yk, yk_slot, true,
-			CHALLENGELEN, (unsigned char *) challenge_new,
-			RESPONSELEN, (unsigned char *) response_new) == 0) {
-		perror("yk_challenge_response() failed");
-		goto out50;
+	if (0 == yk_challenge_response(yk, yk_slot, false,
+									CHALLENGELEN, (unsigned char *) challenge_new,
+									RESPONSELEN, (unsigned char *) response_new)) {
+		if (YK_EWOULDBLOCK == yk_errno) {		/* User interaction is required for getting back response from a challenge */
+			printf("Please touch the YubiKey button to continue...\n");
+			if (0 == yk_challenge_response(yk, yk_slot, true,
+											CHALLENGELEN, (unsigned char *) challenge_new,
+											RESPONSELEN, (unsigned char *) response_new)) {
+				perror("yk_challenge_response() failed");
+				goto out50;
+			}
+		} else {
+			perror("yk_challenge_response() failed");
+			goto out50;
+		}
 	}
 	yubikey_hex_encode((char *) passphrase_new, (char *) response_new, SHA1_DIGEST_SIZE);
 
@@ -355,12 +365,24 @@ int main(int argc, char **argv) {
 		memcpy(challenge_old, second_factor, len < MAX2FLEN ? len : MAX2FLEN);
 
 		/* do challenge/response and encode to hex */
-		if (yk_challenge_response(yk, yk_slot, true,
-				CHALLENGELEN, (unsigned char *) challenge_old,
-				RESPONSELEN, (unsigned char *) response_old) == 0) {
-			perror("yk_challenge_response() failed");
-			goto out60;
+		if (0 == yk_challenge_response(yk, yk_slot, false,
+										CHALLENGELEN, (unsigned char *) challenge_old,
+										RESPONSELEN, (unsigned char *) response_old)) {
+			if (YK_EWOULDBLOCK == yk_errno) {		/* User interaction is required for getting back response from a challenge */
+				printf("Please touch the YubiKey button to continue...\n");
+				if (0 == yk_challenge_response(yk, yk_slot, true,
+												CHALLENGELEN, (unsigned char *) challenge_old,
+												RESPONSELEN, (unsigned char *) response_old)) {
+					perror("yk_challenge_response() failed");
+					goto out60;
+				}
+			} else {
+				perror("yk_challenge_response() failed");
+				goto out60;
+			}
 		}
+		
+		
 		yubikey_hex_encode((char *) passphrase_old, (char *) response_old, SHA1_DIGEST_SIZE);
 
 		if (crypt_keyslot_change_by_passphrase(cryptdevice, luks_slot, luks_slot,

@@ -153,11 +153,21 @@ static int try_answer(const unsigned int serial, uint8_t slot, const char * ask_
 	}
 
 	/* do challenge/response and encode to hex */
-	if (yk_challenge_response(yk, slot, true,
-			CHALLENGELEN, (unsigned char *) challenge,
-			RESPONSELEN, (unsigned char *) response) == 0) {
-		perror("yk_challenge_response() failed");
-		goto out2;
+	if (0 == yk_challenge_response(yk, slot, false,
+									CHALLENGELEN, (unsigned char *) challenge,
+									RESPONSELEN, (unsigned char *) response)) {
+		if (YK_EWOULDBLOCK == yk_errno) {		/* User interaction is required for getting back response from a challenge */
+			printf("Please touch the YubiKey button to continue...\n");
+			if (0 == yk_challenge_response(yk, slot, true,
+											CHALLENGELEN, (unsigned char *) challenge,
+											RESPONSELEN, (unsigned char *) response)) {
+				perror("yk_challenge_response() failed");
+				goto out2;
+			}
+		} else {
+			perror("yk_challenge_response() failed");
+			goto out2;
+		}
 	}
 
 	/* close Yubikey */
