@@ -14,4 +14,5 @@ ConditionPathExists=/etc/ykfde.d/
 Type=oneshot
 RemainAfterExit=yes
 TimeoutSec=0
-ExecStart=/usr/bin/systemd-ask-password --no-tty --no-output --keyname='ykfde-2f' 'Please enter second factor for Yubikey full disk encryption!'
+StandardOutput=null
+ExecStart=/usr/bin/systemd-ask-password --no-tty --keyname='ykfde-2f' 'Please enter second factor for Yubikey full disk encryption!'
